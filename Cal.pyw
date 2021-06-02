@@ -41,44 +41,48 @@ def standardise_timing(time_string: str, recurring=True):
     return booking__start_datetime, booking__end_datetime, recurrence
 
 
+class LessonReport:
+    def __init__(self, booking_id):
+        self.key_names = ["Progress", "Good", "Improve", "Next"]
+        self.data = {key: "" for key in self.key_names}
+        self.icons = {f"{self.key_names[0]}_ico": "https://cdn.mytutor.co.uk/icons/emoji-write-pencil.png",
+                      f"{self.key_names[1]}_ico": "https://cdn.mytutor.co.uk/icons/emoji-clapping-hands.png",
+                      f"{self.key_names[2]}_ico": "https://cdn.mytutor.co.uk/icons/emoji-dartboard.png",
+                      f"{self.key_names[3]}_ico": "https://cdn.mytutor.co.uk/icons/emoji-notes.png"}
+        self.ID = booking_id
+
+    def __getitem__(self, item):
+        return {**self.data, **self.icons}[item]
+
+    def __setitem__(self, key, value):
+        self.data[key] = value
+
+
 class Booking:
     def __init__(self, student_name: str, lesson_name: str, timing_data: str, status: str, price=0):
-        self.__student_name = student_name.replace("\n", "")
-        self.__lesson_name = lesson_name.replace("\n", "")
-        self.__booking_start_datetime, self.__booking_end_datetime, self.__recurrence = standardise_timing(
+        self._student_name = student_name.replace("\n", "")
+        self._lesson_name = lesson_name.replace("\n", "")
+        self._booking_start_datetime, self._booking_end_datetime, self._recurrence = standardise_timing(
             timing_data.replace("\n", ""))
-        self.__price = price
-        self.__status = status
+        self._price = price
+        self._status = status
 
-    def get_student_name(self):
-        return self.__student_name
+    @property
+    def details(self):
+        attr_names = [attr for attr in dir(self) if attr[0] == "_" and not attr[1] == "_"]
+        dicc = {key[1:]: getattr(self, key) for key in attr_names}
+        return dicc
 
-    def get_lesson_name(self):
-        return self.__lesson_name
+    @property
+    def ID(self):
+        return self.__hash__()
 
-    def get_start_date_and_time(self):
-        return self.__booking_start_datetime
+    def __getitem__(self, item):
+        return self.details[item]
 
-    def get_end_date_and_time(self):
-        return self.__booking_end_datetime
-
-    def get_recurrence(self):
-        return self.__recurrence
-
-    def get_price(self):
-        return self.__price
-
-    def get_status(self):
-        return self.__status
-
-    def get_all_details(self):
-        return (self.get_student_name(),
-                self.get_lesson_name(),
-                self.get_start_date_and_time(),
-                self.get_end_date_and_time(),
-                self.get_recurrence(),
-                self.get_status(),
-                self.get_price())
+    def __hash__(self):
+        return hash(
+            str(self["booking_start_datetime"]) + str(self["booking_end_datetime"]) + str(self["student_name"]))
 
 
 class Box_Manager:
@@ -135,16 +139,14 @@ def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics"):
     cal.add("REFRESH-INTERVAL;VALUE=DURATION", "P1H")
     cal.add("color", "5")
 
-    uids = []
+    booking_ids = []
     for booking in bookings_list:
-        uid = str(booking.get_start_date_and_time()) + str(booking.get_end_date_and_time()) + str(
-            booking.get_student_name())
-        if uid not in uids:
+        if booking.ID not in booking_ids:
             description = f"""
             My Tutor Lesson
 
-            {booking.get_lesson_name()}
-            {booking.get_student_name()}
+            {booking['lesson_name']}
+            {booking['student_name']}
 
             Current
 
@@ -152,16 +154,16 @@ def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics"):
 
             Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
             """
-            uids.append(uid)
+            booking_ids.append(booking.ID)
             event = Event()
-            event.add('summary', "MyTutor - " + booking.get_lesson_name() + " - " + booking.get_student_name())
-            event.add('dtstart', booking.get_start_date_and_time())
-            event.add('dtend', booking.get_end_date_and_time())
+            event.add('summary', f"MyTutor - {booking['lesson_name']} - {booking['student_name']}")
+            event.add('dtstart', booking["booking_start_datetime"])
+            event.add('dtend', booking["booking_end_datetime"])
             event.add("CATEGORIES", ["MyTutor"])
-            event['uid'] = uid
+            event['uid'] = booking.ID
             event.add('priority', 5)
             event.add("DESCRIPTION", description)
-            if booking.get_status() not in ["Confirmed", "Payment scheduled"]:
+            if booking['status'] not in ["Confirmed", "Payment scheduled"]:
                 event.add("STATUS", "TENTATIVE")
             else:
                 event.add("STATUS", "CONFIRMED")
