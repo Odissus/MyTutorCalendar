@@ -9,13 +9,15 @@ from boxsdk import JWTAuth, Client
 import os
 
 
-def standardise_timing(time_string: str):
+def standardise_timing(time_string: str, recurring=True):
     if "Today" in time_string:
         time_string = time_string[5:]
     else:
         time_string = time_string[3:]
     index = time_string.find(":") + 3
-    recurrance = time_string[index:]
+    recurrence = ""
+    if recurring:
+        recurrence = time_string[index:]
     time_det = time_string[:index]
 
     day = int(time_det.split(" ")[1])
@@ -32,19 +34,18 @@ def standardise_timing(time_string: str):
 
     # My Tutor is retarded and can't handle timezones atm, hence hours-1 is currently in place
     booking__start_datetime = datetime(booking_year, month_no, day, hours - 1, minutes, 0, 0, tzinfo=UTC)
-
-    if recurrance == "Free meeting":
+    if recurrence == "Free meeting":
         booking__end_datetime = booking__start_datetime + timedelta(minutes=15)
     else:
         booking__end_datetime = booking__start_datetime + timedelta(hours=1)
-    return booking__start_datetime, booking__end_datetime, recurrance
+    return booking__start_datetime, booking__end_datetime, recurrence
 
 
 class Booking:
     def __init__(self, student_name: str, lesson_name: str, timing_data: str, status: str, price=0):
         self.__student_name = student_name.replace("\n", "")
         self.__lesson_name = lesson_name.replace("\n", "")
-        self.__booking_start_datetime, self.__booking_end_datetime, self.__recurrance = standardise_timing(
+        self.__booking_start_datetime, self.__booking_end_datetime, self.__recurrence = standardise_timing(
             timing_data.replace("\n", ""))
         self.__price = price
         self.__status = status
@@ -61,8 +62,8 @@ class Booking:
     def get_end_date_and_time(self):
         return self.__booking_end_datetime
 
-    def get_recurrance(self):
-        return self.__recurrance
+    def get_recurrence(self):
+        return self.__recurrence
 
     def get_price(self):
         return self.__price
@@ -70,12 +71,12 @@ class Booking:
     def get_status(self):
         return self.__status
 
-    def get_all_deails(self):
+    def get_all_details(self):
         return (self.get_student_name(),
                 self.get_lesson_name(),
                 self.get_start_date_and_time(),
                 self.get_end_date_and_time(),
-                self.get_recurrance(),
+                self.get_recurrence(),
                 self.get_status(),
                 self.get_price())
 
