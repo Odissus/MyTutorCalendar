@@ -1,3 +1,4 @@
+import numpy as np
 from icalendar import Calendar, Event
 from datetime import datetime, timedelta
 from pytz import UTC
@@ -9,7 +10,7 @@ from boxsdk import JWTAuth, Client
 import os
 
 
-def standardise_timing(time_string: str, recurring=True):
+def standardise_timing(time_string: str, recurring=True, hour_correction=True):
     if "Today" in time_string:
         time_string = time_string[5:]
     else:
@@ -19,7 +20,6 @@ def standardise_timing(time_string: str, recurring=True):
     if recurring:
         recurrence = time_string[index:]
     time_det = time_string[:index]
-
     day = int(time_det.split(" ")[1])
     month = re.findall("[A-Z][a-z][a-z]", time_det)[0]
     booking_time = re.findall("\d+:\d\d", time_det)[0]
@@ -32,8 +32,8 @@ def standardise_timing(time_string: str, recurring=True):
     if datetime.now().month == 12 and month_no < 12:
         booking_year += 1
 
-    # My Tutor is retarded and can't handle timezones atm, hence hours-1 is currently in place
-    booking__start_datetime = datetime(booking_year, month_no, day, hours - 1, minutes, 0, 0, tzinfo=UTC)
+    # My Tutor is a bit backwards and can't handle timezones atm, hence hours-1 is currently in place
+    booking__start_datetime = datetime(booking_year, month_no, day, hours - int(hour_correction), minutes, 0, 0, tzinfo=UTC)
     if recurrence == "Free meeting":
         booking__end_datetime = booking__start_datetime + timedelta(minutes=15)
     else:
@@ -66,6 +66,11 @@ class Booking:
             timing_data.replace("\n", ""))
         self._price = price
         self._status = status
+        self.last_report = None
+
+    @property
+    def _student_first_name(self):
+        return self._student_name[:-3]
 
     @property
     def details(self):
@@ -131,6 +136,71 @@ def generate_booking_list(path="Cookie.conf"):
     return bookings_list
 
 
+def generate_reports(bookings, path="Cookie.conf"):
+    def generate_lesson_report(booking, messages, cookies):
+        report = LessonReport(booking.ID)
+        valid_chat_html = None
+        latest_report = None
+        for chat in messages:
+            if booking["student_first_name"] in chat[0]:
+                session = requests.Session()
+                r = session.get(chat[1], cookies=cookies)
+                this_chat = BeautifulSoup(r.text, "lxml")
+                bookings_card = this_chat.find(id="tutorcardForm:bookingTiles")
+                for lesson in bookings_card.find_all(id=re.compile("TUTORIAL\d{7}$")):
+                    time = lesson.find("div", {"class", "booking-tile__time"}).getText().strip()
+                    start_time_UTC = standardise_timing(time, recurring=False)[0]
+                    if start_time_UTC == booking["booking_start_datetime"]:
+                        valid_chat_html = this_chat
+                        break
+            if valid_chat_html is not None:
+                break
+
+        for message in valid_chat_html.find_all("div", {"class", "message sent"}):
+            report_html = message.find("div", {"class","messagecard sent lessonreport"})
+            if report_html is not None:  # It's a report
+                time = message.find("header").getText().split("\n\n\t\t\t")[1].replace("\n\t\t", "")
+                time_UTC = standardise_timing("DAY "+time, recurring=False, hour_correction=False)[0]
+                if latest_report is None:
+                    latest_report = (report_html, time_UTC)
+                elif latest_report[1] < time_UTC:  # This is a later report (more recent)
+                    latest_report = (report_html, time_UTC)
+        if latest_report is not None:
+            chapter_slices = [17, 19, 22, 22]
+            chapters = latest_report[0].find_all("li")
+            report["Progress"] = chapters[0].getText()[chapter_slices[0]:]
+            report["Good"] = chapters[1].getText()[chapter_slices[1]:]
+            report["Improve"] = chapters[2].getText()[chapter_slices[2]:]
+            report["Next"] = chapters[3].getText()[chapter_slices[3]:]
+        return report
+
+
+    with open(path, "r") as f:
+        contents = f.read()
+        cookie = contents.split(":")[1].strip()
+
+    session = requests.Session()
+    cookies = {"www.mytutor.co.uk": cookie}
+    r = session.get("https://www.mytutor.co.uk/tutors/secure/messages.html", cookies=cookies)
+    soup = BeautifulSoup(r.text, "lxml")
+    messages_html = soup.find(id="chatsForCurrentUserForm:tutorMessagesTable_data")
+    chats = np.array([["", ""]])
+    for chat in messages_html.find_all("tr"):
+        details = chat.find_all("td")[1]
+        name = re.sub('\s+', ' ', details.find("p", {"class", "tile__name"}).getText())
+        if "Parent" in name:
+            name = name.split(" Parent of ")[1][:-1]
+            link = f"https://www.mytutor.co.uk{details.find('div').get('onclick')[15:-1]}"
+
+            while name in chats[:, 0]:  # God help why did you have to do this to me...
+                name += "x"
+            chats = np.append(chats, [[name, link]], axis=0)
+    chats = chats[1:]
+    for booking in bookings:
+        booking.last_report = generate_lesson_report(booking, chats, cookies)
+    return bookings
+
+
 def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics"):
     cal = Calendar()
     cal.add('prodid', '-//My calendar product//mxm.dk//')
@@ -178,7 +248,9 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 cal_file = os.path.join(script_dir, "My_Tutor_Calendar.ics")
 cookie_file = os.path.join(script_dir, "Cookie.conf")
 json_file = os.path.join(script_dir, "config.json")
+
 bookings_list = generate_booking_list(path=cookie_file)
+generate_reports(bookings_list, path=cookie_file)
 generate_calendar_file(bookings_list, filename=cal_file)
 man = Box_Manager(file_path=cal_file, config=json_file)
 res = man.update()
