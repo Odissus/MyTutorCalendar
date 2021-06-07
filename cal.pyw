@@ -201,7 +201,7 @@ def generate_reports(bookings, path="Cookie.conf"):
     return bookings
 
 
-def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics", me=("Mateusz Ogrodnik", "mo3g19@soton.ac.uk")):
+def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics", me=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")):
     cal = Calendar()
     cal.add('prodid', '-//My calendar product//mxm.dk//')
     cal.add('version', '2.0')
@@ -259,7 +259,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 cal_file = os.path.join(script_dir, "My_Tutor_Calendar.ics")
 cookie_file = os.path.join(script_dir, "Cookie.conf")
 json_file = os.path.join(script_dir, "config.json")
-my_details=("Mateusz Ogrodnik", "mo3g19@soton.ac.uk")
+my_details=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")
 
 bookings_list = generate_booking_list(path=cookie_file)
 bookings_list = generate_reports(bookings_list, path=cookie_file)
