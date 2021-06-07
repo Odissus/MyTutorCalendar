@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+
+
 import numpy as np
 from icalendar import Calendar, Event, vText, vCalAddress
 from datetime import datetime, timedelta
