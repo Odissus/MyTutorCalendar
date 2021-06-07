@@ -1,4 +1,3 @@
-import icalendar
 import numpy as np
 from icalendar import Calendar, Event, vText, vCalAddress
 from datetime import datetime, timedelta
@@ -207,25 +206,23 @@ def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics", me=(
     cal.add('prodid', '-//My calendar product//mxm.dk//')
     cal.add('version', '2.0')
     cal.add("X-WR-CALNAME", "MyTutor Calendar")
-    cal.add("REFRESH-INTERVAL;VALUE=DURATION", "P1H")
+    cal.add("REFRESH-INTERVAL;VALUE=DURATION", "P30M")
     cal.add("color", "5")
 
     booking_ids = []
     for booking in bookings_list:
         if booking.ID not in booking_ids:
-            description = f"""
-            My Tutor Lesson
+            description = f"""My Tutor Lesson
+{booking['lesson_name']}
+{booking['student_name']}
 
-            {booking['lesson_name']}
-            {booking['student_name']}
-            
-            Progress: {booking.last_report['Progress']}
-            Good: {booking.last_report['Good']}
-            Improve: {booking.last_report['Improve']}
-            Next: {booking.last_report['Next']}
+Progress: {booking.last_report['Progress']}
+Good: {booking.last_report['Good']}
+Improve: {booking.last_report['Improve']}
+Next: {booking.last_report['Next']}
 
-            Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
-            """
+Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
+"""
             booking_ids.append(booking.ID)
             event = Event()
             event.add('summary', f"MyTutor - {booking['lesson_name']} - {booking['student_name']}")
@@ -265,7 +262,7 @@ json_file = os.path.join(script_dir, "config.json")
 my_details=("Mateusz Ogrodnik", "mo3g19@soton.ac.uk")
 
 bookings_list = generate_booking_list(path=cookie_file)
-generate_reports(bookings_list, path=cookie_file)
+bookings_list = generate_reports(bookings_list, path=cookie_file)
 generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
 man = Box_Manager(file_path=cal_file, config=json_file)
 res = man.update()
