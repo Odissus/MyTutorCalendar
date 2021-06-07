@@ -1,5 +1,6 @@
+import icalendar
 import numpy as np
-from icalendar import Calendar, Event
+from icalendar import Calendar, Event, vText, vCalAddress
 from datetime import datetime, timedelta
 from pytz import UTC
 import requests
@@ -201,7 +202,7 @@ def generate_reports(bookings, path="Cookie.conf"):
     return bookings
 
 
-def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics"):
+def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics", me=("Mateusz Ogrodnik", "mo3g19@soton.ac.uk")):
     cal = Calendar()
     cal.add('prodid', '-//My calendar product//mxm.dk//')
     cal.add('version', '2.0')
@@ -217,10 +218,11 @@ def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics"):
 
             {booking['lesson_name']}
             {booking['student_name']}
-
-            Current
-
-            Previous
+            
+            Progress: {booking.last_report['Progress']}
+            Good: {booking.last_report['Good']}
+            Improve: {booking.last_report['Improve']}
+            Next: {booking.last_report['Next']}
 
             Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
             """
@@ -233,6 +235,18 @@ def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics"):
             event['uid'] = booking.ID
             event.add('priority', 5)
             event.add("DESCRIPTION", description)
+
+            organizer = vCalAddress(f'''MAILTO:{me[1]}''')
+            organizer.params['cn'] = vText(f'''{me[0]}''')
+            organizer.params['role'] = vText('CHAIR')
+            event['organizer'] = organizer
+            event['location'] = vText('MyTutor')
+
+            attendee = vCalAddress('MAILTO:nomail@example.com')
+            attendee.params['cn'] = vText(booking['student_name'])
+            attendee.params['ROLE'] = vText('REQ-PARTICIPANT')
+            event.add('attendee', attendee, encode=0)
+
             if booking['status'] not in ["Confirmed", "Payment scheduled"]:
                 event.add("STATUS", "TENTATIVE")
             else:
@@ -248,9 +262,10 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 cal_file = os.path.join(script_dir, "My_Tutor_Calendar.ics")
 cookie_file = os.path.join(script_dir, "Cookie.conf")
 json_file = os.path.join(script_dir, "config.json")
+my_details=("Mateusz Ogrodnik", "mo3g19@soton.ac.uk")
 
 bookings_list = generate_booking_list(path=cookie_file)
 generate_reports(bookings_list, path=cookie_file)
-generate_calendar_file(bookings_list, filename=cal_file)
+generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
 man = Box_Manager(file_path=cal_file, config=json_file)
 res = man.update()
