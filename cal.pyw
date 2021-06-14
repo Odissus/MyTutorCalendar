@@ -269,3 +269,7 @@ bookings_list = generate_reports(bookings_list, path=cookie_file)
 generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
 man = Box_Manager(file_path=cal_file, config=json_file)
 res = man.update()
+
+output_link = False
+if output_link:
+    print(res)
