@@ -44,6 +44,8 @@ class Booking:
         self._price = price
         self._status = status
         self.last_report = None
+        self.exam_board = None
+        self.help_links = None
 
     @property
     def _student_first_name(self):
@@ -58,6 +60,13 @@ class Booking:
     @property
     def ID(self):
         return self.__hash__()
+
+    def update_exam_board(self):
+        exam_boards_list = ["AQA", "OCR", "Edexcel", "WJEC"]
+        if self.last_report is not None:
+            for item in exam_boards_list:
+                if item in self.last_report["Progress"]:
+                    self.exam_board = item
 
     def __getitem__(self, item):
         return self.details[item]

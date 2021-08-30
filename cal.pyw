@@ -5,10 +5,7 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import os
-from src import Booking, Lesson_Report, Box_Manager
-
-
-
+from src import Booking, Lesson_Report, Box_Manager, Helpful_Resources, Exam_Boards_Translate_Table
 
 
 def generate_booking_list(path="Cookie.conf"):
@@ -159,18 +156,29 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
     f.close()
 
 
+def generate_helplinks(bookings_list: list):
+    link_translation_table = Exam_Boards_Translate_Table.TransitionTable("src/Exam_Boards_Link_Table.csv")
+    for i in range(len(bookings_list)):
+        HR = Helpful_Resources.Help_Links(bookings_list[i], link_translation_table)
+        bookings_list[i].help_links = HR.generate_helplinks()
+    return bookings_list
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
 cal_file = os.path.join(script_dir, "My_Tutor_Calendar.ics")
 cookie_file = os.path.join(script_dir, "Cookie.conf")
 json_file = os.path.join(script_dir, "config.json")
-my_details=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")
+my_details = ("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")
 
 bookings_list = generate_booking_list(path=cookie_file)
+bookings_list = generate_helplinks(bookings_list)
+for booking in bookings_list:
+    print(booking['lesson_name'], booking.help_links)
 bookings_list = generate_reports(bookings_list, path=cookie_file)
 generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
 man = Box_Manager.Box_Manager(file_path=cal_file, config=json_file)
 res = man.update()
 
+# gets the link for the calendar client
 output_link = False
 if output_link:
     print(res)
