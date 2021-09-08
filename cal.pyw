@@ -107,7 +107,7 @@ def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics", me=(
     cal.add('prodid', '-//My calendar product//mxm.dk//')
     cal.add('version', '2.0')
     cal.add("X-WR-CALNAME", "MyTutor Calendar")
-    cal.add("REFRESH-INTERVAL;VALUE=DURATION", "P30M")
+    cal.add("REFRESH-INTERVAL;VALUE=DURATION", "P5M")
     cal.add("color", "5")
 
     booking_ids = []
