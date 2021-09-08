@@ -171,14 +171,16 @@ my_details = ("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")
 
 bookings_list = generate_booking_list(path=cookie_file)
 bookings_list = generate_helplinks(bookings_list)
-for booking in bookings_list:
-    print(booking['lesson_name'], booking.help_links)
 bookings_list = generate_reports(bookings_list, path=cookie_file)
 generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
 man = Box_Manager.Box_Manager(file_path=cal_file, config=json_file)
 res = man.update()
 
+#confirm message
+confirm_mgs = f"Successfully modified {len(bookings_list)} events"
+
 # gets the link for the calendar client
-output_link = False
+output_link = True
 if output_link:
-    print(res)
+    confirm_mgs += f"\nLink to the calendar file can be found under: {res}"
+print(confirm_mgs)
