@@ -156,8 +156,8 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
     f.close()
 
 
-def generate_helplinks(bookings_list: list):
-    link_translation_table = Exam_Boards_Translate_Table.TransitionTable("src/Exam_Boards_Link_Table.csv")
+def generate_helplinks(bookings_list: list, path: str):
+    link_translation_table = Exam_Boards_Translate_Table.TransitionTable(path)
     for i in range(len(bookings_list)):
         HR = Helpful_Resources.Help_Links(bookings_list[i], link_translation_table)
         bookings_list[i].help_links = HR.generate_helplinks()
@@ -167,10 +167,11 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 cal_file = os.path.join(script_dir, "My_Tutor_Calendar.ics")
 cookie_file = os.path.join(script_dir, "Cookie.conf")
 json_file = os.path.join(script_dir, "config.json")
+exam_table_file = os.path.join(script_dir, "src", "Exam_Boards_Link_Table.csv")
 my_details = ("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")
 
 bookings_list = generate_booking_list(path=cookie_file)
-bookings_list = generate_helplinks(bookings_list)
+bookings_list = generate_helplinks(bookings_list, exam_table_file)
 bookings_list = generate_reports(bookings_list, path=cookie_file)
 generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
 man = Box_Manager.Box_Manager(file_path=cal_file, config=json_file)
