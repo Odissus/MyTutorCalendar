@@ -55,7 +55,7 @@ def generate_reports(bookings, path="Cookie.conf"):
             if valid_chat_html is not None:
                 break
         if valid_chat_html is None:
-            return None
+            return report
 
         for message in valid_chat_html.find_all("div", {"class", "message sent"}):
             report_html = message.find("div", {"class","messagecard sent lessonreport"})
