@@ -29,5 +29,8 @@ class Log:
         with open(self.p2log, "a") as log_file:
             log_file.write(self.log_string.replace("        ", ""))
 
+    def print_log(self):
+        print(self.log_string)
+
     def __calc_hash(self):
         return hash(sum([hash(booking) for booking in self.bookings_list]))
