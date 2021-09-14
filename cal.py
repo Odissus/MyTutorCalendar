@@ -178,7 +178,6 @@ man = Box_Manager.Box_Manager(file_path=cal_file, config=json_file)
 res = man.update()
 
 #Logger.Log(bookings_list)
-Logger.Log(bookings_list).print_log()
 
 #confirm message
 confirm_mgs = f"Successfully modified {len(bookings_list)} events"
