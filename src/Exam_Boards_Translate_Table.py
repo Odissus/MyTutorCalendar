@@ -7,9 +7,7 @@ class TransitionTable:
         """
         Translation table for links to specific exam boards
 
-        :param board: Exam Boards
-        :param subject:
-        :param level: A level, GCSE etc...
+        :param csv_directory: directory to the csv file holding links to different exam tables
         """
 
         df = pd.read_csv(csv_directory)

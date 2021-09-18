@@ -12,6 +12,8 @@ class Box_Manager:
             if item.name == self.filename:
                 self.file_id = item.id
                 return
+        new_file = self.client.folder("0").upload(file_path)
+        self.file_id = new_file.id
 
     def update(self):
         self.client.file(self.file_id).update_contents(self.file_path)

@@ -5,16 +5,13 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import os
-from src import Booking, Lesson_Report, Box_Manager, Helpful_Resources, Exam_Boards_Translate_Table, Logger
+from src import Booking, Lesson_Report, Box_Manager, Helpful_Resources, \
+    Cookie_Reader, Logger, Exam_Boards_Translate_Table
 
 
-def generate_booking_list(path="Cookie.conf"):
-    with open(path, "r") as f:
-        contents = f.read()
-        cookie = contents.split(":")[1].strip()
-
+def generate_booking_list(cookie_string: str):
     session = requests.Session()
-    cookies = {"www.mytutor.co.uk": cookie}
+    cookies = {"www.mytutor.co.uk": cookie_string}
     r = session.get("https://www.mytutor.co.uk/tutors/secure/bookings.html", cookies=cookies)
     soup = BeautifulSoup(r.text, "lxml")
     bookings_html = soup.find(id="upcomingSessions")
@@ -35,7 +32,7 @@ def generate_booking_list(path="Cookie.conf"):
     return bookings_list
 
 
-def generate_reports(bookings, path="Cookie.conf"):
+def generate_reports(bookings, cookie):
     def generate_lesson_report(booking, messages, cookies):
         report = Lesson_Report.LessonReport(booking.ID)
         valid_chat_html = None
@@ -58,10 +55,10 @@ def generate_reports(bookings, path="Cookie.conf"):
             return report
 
         for message in valid_chat_html.find_all("div", {"class", "message sent"}):
-            report_html = message.find("div", {"class","messagecard sent lessonreport"})
+            report_html = message.find("div", {"class", "messagecard sent lessonreport"})
             if report_html is not None:  # It's a report
                 time = message.find("header").getText().split("\n\n\t\t\t")[1].replace("\n\t\t", "")
-                time_UTC = Booking.standardise_timing("DAY "+time, recurring=False, hour_correction=False)[0]
+                time_UTC = Booking.standardise_timing("DAY " + time, recurring=False, hour_correction=False)[0]
                 if latest_report is None:
                     latest_report = (report_html, time_UTC)
                 elif latest_report[1] < time_UTC:  # This is a later report (more recent)
@@ -74,11 +71,6 @@ def generate_reports(bookings, path="Cookie.conf"):
             report["Improve"] = chapters[2].getText()[chapter_slices[2]:]
             report["Next"] = chapters[3].getText()[chapter_slices[3]:]
         return report
-
-
-    with open(path, "r") as f:
-        contents = f.read()
-        cookie = contents.split(":")[1].strip()
 
     session = requests.Session()
     cookies = {"www.mytutor.co.uk": cookie}
@@ -102,7 +94,8 @@ def generate_reports(bookings, path="Cookie.conf"):
     return bookings
 
 
-def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics", me=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")):
+def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics",
+                           me=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")):
     cal = Calendar()
     cal.add('prodid', '-//My calendar product//mxm.dk//')
     cal.add('version', '2.0')
@@ -156,34 +149,42 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
     f.close()
 
 
-def generate_helplinks(bookings_list: list, path: str):
+def generate_help_links(bookings_list: list, path: str):
     link_translation_table = Exam_Boards_Translate_Table.TransitionTable(path)
     for i in range(len(bookings_list)):
-        HR = Helpful_Resources.Help_Links(bookings_list[i], link_translation_table)
-        bookings_list[i].help_links = HR.generate_helplinks()
+        hr = Helpful_Resources.Help_Links(bookings_list[i], link_translation_table)
+        bookings_list[i].help_links = hr.generate_helplinks()
     return bookings_list
 
+
+def compile_calendar(name: str, email: str, cookie: str, logging=False):
+    my_details = (name, email)
+    cal_file = f"{name}.ics".replace(" ", "_")  # change spaces to _
+    bookings_list = generate_booking_list(cookie)
+    bookings_list = generate_help_links(bookings_list, exam_table_file)
+    bookings_list = generate_reports(bookings_list, cookie)
+    generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
+    man = Box_Manager.Box_Manager(file_path=cal_file, config=json_file)
+    res = man.update()
+
+    # confirm message
+    confirm_mgs = f"Successfully modified {len(bookings_list)} events for {name} ({email})"
+
+    # gets the link for the calendar client
+    output_link = True
+    if output_link:
+        confirm_mgs += f"\nLink to the calendar file can be found under: {res}"
+    print(confirm_mgs)
+
+    if logging:
+        print(Logger.Log(bookings_list, path_to_log_file=f"{name}.log").log_string)
+
+
 script_dir = os.path.dirname(os.path.realpath(__file__))
-cal_file = os.path.join(script_dir, "My_Tutor_Calendar.ics")
-cookie_file = os.path.join(script_dir, "Cookie.conf")
 json_file = os.path.join(script_dir, "config.json")
 exam_table_file = os.path.join(script_dir, "src", "Exam_Boards_Link_Table.csv")
-my_details = ("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")
+cookies_csv_file = os.path.join(script_dir, "cookies", "Cookies.csv")
 
-bookings_list = generate_booking_list(path=cookie_file)
-bookings_list = generate_helplinks(bookings_list, exam_table_file)
-bookings_list = generate_reports(bookings_list, path=cookie_file)
-generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
-man = Box_Manager.Box_Manager(file_path=cal_file, config=json_file)
-res = man.update()
-
-#Logger.Log(bookings_list)
-
-#confirm message
-confirm_mgs = f"Successfully modified {len(bookings_list)} events"
-
-# gets the link for the calendar client
-output_link = True
-if output_link:
-    confirm_mgs += f"\nLink to the calendar file can be found under: {res}"
-print(confirm_mgs)
+Cookies = Cookie_Reader.CookieTableReader(cookies_csv_file).get()
+for c in Cookies:
+    compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"])
