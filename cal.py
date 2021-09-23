@@ -4,11 +4,11 @@ from icalendar import Calendar, Event, vText, vCalAddress
 import requests
 from bs4 import BeautifulSoup
 import re
-import os
 from src import *
+from typing import List
 
 
-def generate_booking_list(cookie_string: str, prices_file_path: str) -> list[Booking]:
+def generate_booking_list(cookie_string: str, prices_file_path: str) -> List[Booking]:
     session = requests.Session()
     cookies = {"www.mytutor.co.uk": cookie_string}
     r = session.get("https://www.mytutor.co.uk/tutors/secure/bookings.html", cookies=cookies)
@@ -37,7 +37,7 @@ def generate_booking_list(cookie_string: str, prices_file_path: str) -> list[Boo
     return bookings_list
 
 
-def generate_reports(bookings: list[Booking], cookie: str) -> list[Booking]:
+def generate_reports(bookings: List[Booking], cookie: str) -> List[Booking]:
     def generate_lesson_report(booking: Booking, messages, cookies):
         report = Lesson_Report(booking.ID)
         valid_chat_html = None
@@ -99,7 +99,7 @@ def generate_reports(bookings: list[Booking], cookie: str) -> list[Booking]:
     return bookings
 
 
-def generate_calendar_file(bookings_list: list[Booking], filename="My_Tutor_Calendar.ics",
+def generate_calendar_file(bookings_list: List[Booking], filename="My_Tutor_Calendar.ics",
                            me=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")) -> None:
     cal = Calendar()
     cal.add('prodid', '-//My calendar product//mxm.dk//')
@@ -156,7 +156,7 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
     f.close()
 
 
-def generate_help_links(bookings_list: list[Booking], path: str) -> list[Booking]:
+def generate_help_links(bookings_list: List[Booking], path: str) -> List[Booking]:
     link_translation_table = Exam_Boards_Translate_Table(path)
     for i in range(len(bookings_list)):
         hr = Helpful_Resources(bookings_list[i], link_translation_table)

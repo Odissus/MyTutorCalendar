@@ -11,7 +11,7 @@ class CookieTableReader:
         """
 
         self.df = pd.read_csv(csv_directory)
+
     def get(self):
         for i in self.df.index:
             yield self.df.iloc[i]
-
