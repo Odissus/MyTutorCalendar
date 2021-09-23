@@ -5,7 +5,8 @@ import requests
 from bs4 import BeautifulSoup
 import re
 from src import *
-from typing import List
+from typing import List, Tuple
+import hashlib
 
 
 def generate_booking_list(cookie_string: str, prices_file_path: str) -> List[Booking]:
@@ -99,8 +100,7 @@ def generate_reports(bookings: List[Booking], cookie: str) -> List[Booking]:
     return bookings
 
 
-def generate_calendar_file(bookings_list: List[Booking], filename="My_Tutor_Calendar.ics",
-                           me=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")) -> None:
+def generate_calendar_file(bookings_list: List[Booking], filename: str, me: Tuple[str, str]) -> None:
     cal = Calendar()
     cal.add('prodid', '-//My calendar product//mxm.dk//')
     cal.add('version', '2.0')
@@ -164,15 +164,17 @@ def generate_help_links(bookings_list: List[Booking], path: str) -> List[Booking
     return bookings_list
 
 
-def compile_calendar(name: str, email: str, cookie: str, logging=False):
+def compile_calendar(name: str, email: str, cookie: str, logging: bool, calendar_files_directory: str):
     my_details = (name, email)
-    cal_file = f"{name}.ics".replace(" ", "_")  # change spaces to _
     bookings_list = generate_booking_list(cookie, prices_file)
     bookings_list = generate_help_links(bookings_list, exam_table_file)
     bookings_list = generate_reports(bookings_list, cookie)
-    generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
-    man = Box_Manager(file_path=cal_file, config=json_file)
-    res = man.update()
+
+    calendar_basename = f"""{name.replace(" ", "_")}_{hashlib.sha256("TUTOR-5fa62eab-0f3a-487f-9f7a-5ec4386190b9".encode('utf-8')).hexdigest()}.ics """
+    calendar_filename = os.path.join(calendar_files_directory, calendar_basename)
+    generate_calendar_file(bookings_list, filename=calendar_filename, me=my_details)
+    # man = Box_Manager(file_path=cal_file, config=json_file)
+    # res = man.update()
 
     # confirm message
     confirm_mgs = f"Successfully modified {len(bookings_list)} events for {name} ({email})"
@@ -180,7 +182,7 @@ def compile_calendar(name: str, email: str, cookie: str, logging=False):
     # gets the link for the calendar client
     output_link = True
     if output_link:
-        confirm_mgs += f"\nLink to the calendar file can be found under: {res}"
+        confirm_mgs += f"\nLink to the calendar file can be found under: {calendar_basename}"
     print(confirm_mgs)
 
     if logging:
@@ -192,7 +194,8 @@ json_file = os.path.join(script_dir, "config.json")
 exam_table_file = os.path.join(script_dir, "src", "Exam_Boards_Link_Table.csv")
 cookies_csv_file = os.path.join(script_dir, "cookies", "Cookies.csv")
 prices_file = os.path.join(script_dir, "src", "Price_Bands.csv")
+calendar_files_directory = script_dir
 
 Cookies = Cookie_Reader(cookies_csv_file).get()
 for c in Cookies:
-    compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"])
+    compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"], calendar_files_directory)
