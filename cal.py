@@ -170,7 +170,7 @@ def compile_calendar(name: str, email: str, cookie: str, logging: bool, calendar
     bookings_list = generate_help_links(bookings_list, exam_table_file)
     bookings_list = generate_reports(bookings_list, cookie)
 
-    calendar_basename = f"""{name.replace(" ", "_")}_{hashlib.sha256("TUTOR-5fa62eab-0f3a-487f-9f7a-5ec4386190b9".encode('utf-8')).hexdigest()}.ics """
+    calendar_basename = f"""{name.replace(" ", "_")}_{hashlib.sha256("TUTOR-5fa62eab-0f3a-487f-9f7a-5ec4386190b9".encode('utf-8')).hexdigest()}.ics"""
     calendar_filename = os.path.join(calendar_files_directory, calendar_basename)
     generate_calendar_file(bookings_list, filename=calendar_filename, me=my_details)
     # man = Box_Manager(file_path=cal_file, config=json_file)
