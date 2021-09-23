@@ -1,0 +1,65 @@
+Type, Band, Level, Price
+Old,1,GCSE,11.00
+Old,1,A Level,12.00
+Old,1,Mentoring,12.00
+Old,1,University,12.00
+Old,2,GCSE,12.00
+Old,2,A Level,13.00
+Old,2,Mentoring,13.00
+Old,2,University,13.00
+Old,3,GCSE,None
+Old,3,A Level,None
+Old,3,Mentoring,None
+Old,3,University,None
+Old,4,GCSE,None
+Old,4,A Level,None
+Old,4,Mentoring,None
+Old,4,University,None
+Old,5,GCSE,None
+Old,5,A Level,None
+Old,5,Mentoring,None
+Old,5,University,None
+Old,6,GCSE,None
+Old,6,A Level,None
+Old,6,Mentoring,None
+Old,6,University,None
+Old,7,GCSE,None
+Old,7,A Level,None
+Old,7,Mentoring,None
+Old,7,University,None
+Old,8,GCSE,None
+Old,8,A Level,None
+Old,8,Mentoring,None
+Old,8,University,None
+New,1,GCSE,11.00
+New,1,A Level,12.00
+New,1,Mentoring,12.00
+New,1,University,None
+New,2,GCSE,12.21
+New,2,A Level,13.21
+New,2,Mentoring,13.21
+New,2,University,None
+New,3,GCSE,13.44
+New,3,A Level,14.44
+New,3,Mentoring,14.44
+New,3,University,None
+New,4,GCSE,15.00
+New,4,A Level,16.00
+New,4,Mentoring,16.00
+New,4,University,None
+New,5,GCSE,19.50
+New,5,A Level,19.50
+New,5,Mentoring,19.50
+New,5,University,None
+New,6,GCSE,25.50
+New,6,A Level,25.50
+New,6,Mentoring,25.50
+New,6,University,None
+New,7,GCSE,28.50
+New,7,A Level,28.50
+New,7,Mentoring,28.50
+New,7,University,None
+New,8,GCSE,31.50
+New,8,A Level,31.50
+New,8,Mentoring,31.50
+New,8,University,None

@@ -5,11 +5,10 @@ import requests
 from bs4 import BeautifulSoup
 import re
 import os
-from src import Booking, Lesson_Report, Box_Manager, Helpful_Resources, \
-    Cookie_Reader, Logger, Exam_Boards_Translate_Table
+from src import *
 
 
-def generate_booking_list(cookie_string: str):
+def generate_booking_list(cookie_string: str, prices_file_path: str) -> list[Booking]:
     session = requests.Session()
     cookies = {"www.mytutor.co.uk": cookie_string}
     r = session.get("https://www.mytutor.co.uk/tutors/secure/bookings.html", cookies=cookies)
@@ -27,14 +26,20 @@ def generate_booking_list(cookie_string: str):
             name = details[0].find("p").getText()
             lesson = details[1].getText()
             confirmation = entry.find_all("td", {"class", "tile--large"})[2].find("p").getText().strip()
-            booking = Booking.Booking(name, lesson, timing, confirmation)
+            booking = Booking(name, lesson, timing, confirmation)
             bookings_list.append(booking)
+
+    # generate prices
+    Pricer.set_path(prices_file_path)
+    for i, booking in enumerate(bookings_list):
+        bookings_list[i] = Pricer.price(booking)
+
     return bookings_list
 
 
-def generate_reports(bookings, cookie):
-    def generate_lesson_report(booking, messages, cookies):
-        report = Lesson_Report.LessonReport(booking.ID)
+def generate_reports(bookings: list[Booking], cookie: str) -> list[Booking]:
+    def generate_lesson_report(booking: Booking, messages, cookies):
+        report = Lesson_Report(booking.ID)
         valid_chat_html = None
         latest_report = None
         for chat in messages:
@@ -94,8 +99,8 @@ def generate_reports(bookings, cookie):
     return bookings
 
 
-def generate_calendar_file(bookings_list, filename="My_Tutor_Calendar.ics",
-                           me=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")):
+def generate_calendar_file(bookings_list: list[Booking], filename="My_Tutor_Calendar.ics",
+                           me=("Mateusz Ogrodnik", "mateusz.gardener@gmail.com")) -> None:
     cal = Calendar()
     cal.add('prodid', '-//My calendar product//mxm.dk//')
     cal.add('version', '2.0')
@@ -114,6 +119,8 @@ Progress: {booking.last_report['Progress']}
 Good: {booking.last_report['Good']}
 Improve: {booking.last_report['Improve']}
 Next: {booking.last_report['Next']}
+
+Price: {booking['price']}
 
 Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
 """
@@ -149,10 +156,10 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
     f.close()
 
 
-def generate_help_links(bookings_list: list, path: str):
-    link_translation_table = Exam_Boards_Translate_Table.TransitionTable(path)
+def generate_help_links(bookings_list: list[Booking], path: str) -> list[Booking]:
+    link_translation_table = Exam_Boards_Translate_Table(path)
     for i in range(len(bookings_list)):
-        hr = Helpful_Resources.Help_Links(bookings_list[i], link_translation_table)
+        hr = Helpful_Resources(bookings_list[i], link_translation_table)
         bookings_list[i].help_links = hr.generate_helplinks()
     return bookings_list
 
@@ -160,11 +167,11 @@ def generate_help_links(bookings_list: list, path: str):
 def compile_calendar(name: str, email: str, cookie: str, logging=False):
     my_details = (name, email)
     cal_file = f"{name}.ics".replace(" ", "_")  # change spaces to _
-    bookings_list = generate_booking_list(cookie)
+    bookings_list = generate_booking_list(cookie, prices_file)
     bookings_list = generate_help_links(bookings_list, exam_table_file)
     bookings_list = generate_reports(bookings_list, cookie)
     generate_calendar_file(bookings_list, filename=cal_file, me=my_details)
-    man = Box_Manager.Box_Manager(file_path=cal_file, config=json_file)
+    man = Box_Manager(file_path=cal_file, config=json_file)
     res = man.update()
 
     # confirm message
@@ -177,14 +184,15 @@ def compile_calendar(name: str, email: str, cookie: str, logging=False):
     print(confirm_mgs)
 
     if logging:
-        print(Logger.Log(bookings_list, path_to_log_file=f"{name}.log").log_string)
+        print(Logger(bookings_list, path_to_log_file=f"{name}.log").log_string)
 
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
 json_file = os.path.join(script_dir, "config.json")
 exam_table_file = os.path.join(script_dir, "src", "Exam_Boards_Link_Table.csv")
 cookies_csv_file = os.path.join(script_dir, "cookies", "Cookies.csv")
+prices_file = os.path.join(script_dir, "src", "Price_Bands.csv")
 
-Cookies = Cookie_Reader.CookieTableReader(cookies_csv_file).get()
+Cookies = Cookie_Reader(cookies_csv_file).get()
 for c in Cookies:
     compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"])
