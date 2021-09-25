@@ -170,11 +170,9 @@ def compile_calendar(name: str, email: str, cookie: str, logging: bool, calendar
     bookings_list = generate_help_links(bookings_list, exam_table_file)
     bookings_list = generate_reports(bookings_list, cookie)
 
-    calendar_basename = f"""{name.replace(" ", "_")}_{hashlib.sha256("TUTOR-5fa62eab-0f3a-487f-9f7a-5ec4386190b9".encode('utf-8')).hexdigest()}.ics"""
+    calendar_basename = f"""{name.replace(" ", "_")}_{hashlib.sha256(cookie.encode('utf-8')).hexdigest()}.ics"""
     calendar_filename = os.path.join(calendar_files_directory, calendar_basename)
     generate_calendar_file(bookings_list, filename=calendar_filename, me=my_details)
-    # man = Box_Manager(file_path=cal_file, config=json_file)
-    # res = man.update()
 
     # confirm message
     confirm_mgs = f"Successfully modified {len(bookings_list)} events for {name} ({email})"
@@ -190,11 +188,12 @@ def compile_calendar(name: str, email: str, cookie: str, logging: bool, calendar
 
 
 script_dir = os.path.dirname(os.path.realpath(__file__))
-json_file = os.path.join(script_dir, "config.json")
+settings = Config.get(os.path.join(script_dir, "Config.txt"))
+
 exam_table_file = os.path.join(script_dir, "src", "Exam_Boards_Link_Table.csv")
 cookies_csv_file = os.path.join(script_dir, "cookies", "Cookies.csv")
 prices_file = os.path.join(script_dir, "src", "Price_Bands.csv")
-calendar_files_directory = script_dir
+calendar_files_directory = settings["calendar_files_directory"]
 
 Cookies = Cookie_Reader(cookies_csv_file).get()
 for c in Cookies:
