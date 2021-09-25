@@ -193,7 +193,7 @@ settings = Config.get(os.path.join(script_dir, "Config.txt"))
 exam_table_file = os.path.join(script_dir, "src", "Exam_Boards_Link_Table.csv")
 cookies_csv_file = os.path.join(script_dir, "cookies", "Cookies.csv")
 prices_file = os.path.join(script_dir, "src", "Price_Bands.csv")
-calendar_files_directory = settings["calendar_files_directory"]
+calendar_files_directory = settings["calendar_files_directory"].replace("\n", "")
 
 Cookies = Cookie_Reader(cookies_csv_file).get()
 for c in Cookies:
