@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import numpy as np
-from icalendar import Calendar, Event, vText, vCalAddress
+from icalendar import Calendar, Event, vText, vCalAddress, Alarm
 import requests
 from bs4 import BeautifulSoup
 import re
@@ -9,27 +9,8 @@ from typing import List, Tuple
 import hashlib
 
 
-def generate_booking_list(cookie_string: str, prices_file_path: str) -> List[Booking]:
-    session = requests.Session()
-    cookies = {"www.mytutor.co.uk": cookie_string}
-    r = session.get("https://www.mytutor.co.uk/tutors/secure/bookings.html", cookies=cookies)
-    soup = BeautifulSoup(r.text, "lxml")
-    bookings_html = soup.find(id="upcomingSessions")
-
-    bookings_list = []
-    regex = re.compile(
-        "classbookingform:classbookingtabs:upcomingSessionsGroupedByMomentList:\d+:upcomingSessionsDataTable_data")
-    for section in bookings_html.find_all("tbody", {"id": regex}):
-        for entry in bookings_html.find_all("tr", {"data-ri": re.compile("\d+")}):
-            timing = entry.find("td", {"class", "tile__person tile__person--first"}) \
-                .find("p", {"class", "tile__meta tile--large"}).getText()
-            details = entry.find_all("td", {"class", "tile__meta tile--large"})
-            name = details[0].find("p").getText()
-            lesson = details[1].getText()
-            confirmation = entry.find_all("td", {"class", "tile--large"})[2].find("p").getText().strip()
-            booking = Booking(name, lesson, timing, confirmation)
-            bookings_list.append(booking)
-
+def generate_booking_list(prices_file_path: str) -> List[Booking]:
+    bookings_list = MyTutorParser.generate_booking_list_from_bookings()
     # generate prices
     Pricer.set_path(prices_file_path)
     for i, booking in enumerate(bookings_list):
@@ -38,65 +19,8 @@ def generate_booking_list(cookie_string: str, prices_file_path: str) -> List[Boo
     return bookings_list
 
 
-def generate_reports(bookings: List[Booking], cookie: str) -> List[Booking]:
-    def generate_lesson_report(booking: Booking, messages, cookies):
-        report = Lesson_Report(booking.ID)
-        valid_chat_html = None
-        latest_report = None
-        for chat in messages:
-            if booking["student_first_name"] in chat[0]:
-                session = requests.Session()
-                r = session.get(chat[1], cookies=cookies)
-                this_chat = BeautifulSoup(r.text, "lxml")
-                bookings_card = this_chat.find(id="tutorcardForm:bookingTiles")
-                for lesson in bookings_card.find_all(id=re.compile("TUTORIAL\d{7}$")):
-                    time = lesson.find("div", {"class", "booking-tile__time"}).getText().strip()
-                    start_time_UTC = Booking.standardise_timing(time, recurring=False)[0]
-                    if start_time_UTC == booking["booking_start_datetime"]:
-                        valid_chat_html = this_chat
-                        break
-            if valid_chat_html is not None:
-                break
-        if valid_chat_html is None:
-            return report
-
-        for message in valid_chat_html.find_all("div", {"class", "message sent"}):
-            report_html = message.find("div", {"class", "messagecard sent lessonreport"})
-            if report_html is not None:  # It's a report
-                time = message.find("header").getText().split("\n\n\t\t\t")[1].replace("\n\t\t", "")
-                time_UTC = Booking.standardise_timing("DAY " + time, recurring=False, hour_correction=False)[0]
-                if latest_report is None:
-                    latest_report = (report_html, time_UTC)
-                elif latest_report[1] < time_UTC:  # This is a later report (more recent)
-                    latest_report = (report_html, time_UTC)
-        if latest_report is not None:
-            chapter_slices = [17, 19, 22, 22]
-            chapters = latest_report[0].find_all("li")
-            report["Progress"] = chapters[0].getText()[chapter_slices[0]:]
-            report["Good"] = chapters[1].getText()[chapter_slices[1]:]
-            report["Improve"] = chapters[2].getText()[chapter_slices[2]:]
-            report["Next"] = chapters[3].getText()[chapter_slices[3]:]
-        return report
-
-    session = requests.Session()
-    cookies = {"www.mytutor.co.uk": cookie}
-    r = session.get("https://www.mytutor.co.uk/tutors/secure/messages.html", cookies=cookies)
-    soup = BeautifulSoup(r.text, "lxml")
-    messages_html = soup.find(id="chatsForCurrentUserForm:tutorMessagesTable_data")
-    chats = np.array([["", ""]])
-    for chat in messages_html.find_all("tr"):
-        details = chat.find_all("td")[1]
-        name = re.sub('\s+', ' ', details.find("p", {"class", "tile__name"}).getText())
-        if "Parent" in name:
-            name = name.split(" Parent of ")[1][:-1]
-            link = f"https://www.mytutor.co.uk{details.find('div').get('onclick')[15:-1]}"
-
-            while name in chats[:, 0]:  # God help why did you have to do this to me...
-                name += "x"
-            chats = np.append(chats, [[name, link]], axis=0)
-    chats = chats[1:]
-    for booking in bookings:
-        booking.last_report = generate_lesson_report(booking, chats, cookies)
+def generate_reports(bookings: List[Booking]) -> List[Booking]:
+    bookings = MyTutorParser.generate_reports(bookings)
     return bookings
 
 
@@ -129,7 +53,7 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
             event.add('summary', f"MyTutor - {booking['lesson_name']} - {booking['student_name']}")
             event.add('dtstart', booking["booking_start_datetime"])
             event.add('dtend', booking["booking_end_datetime"])
-            event.add("CATEGORIES", ["MyTutor"])
+#            event.add("CATEGORIES", ["MyTutor"])
             event['uid'] = booking.ID
             event.add('priority', 5)
             event.add("DESCRIPTION", description)
@@ -140,15 +64,17 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
             event['organizer'] = organizer
             event['location'] = vText('MyTutor')
 
-            attendee = vCalAddress('MAILTO:nomail@example.com')
+            attendee = vCalAddress(f"MAILTO:{booking['student_name']}@odissus.com")
             attendee.params['cn'] = vText(booking['student_name'])
             attendee.params['ROLE'] = vText('REQ-PARTICIPANT')
             event.add('attendee', attendee, encode=0)
 
-            if booking['status'] not in ["Confirmed", "Payment scheduled"]:
-                event.add("STATUS", "TENTATIVE")
-            else:
+            if booking['status'] in ["Confirmed", "Payment scheduled"]:
                 event.add("STATUS", "CONFIRMED")
+            elif booking['status'] in ["Matching Team"]:
+                event.add("STATUS", "FREE")
+            else:
+                event.add("STATUS", "TENTATIVE")
             cal.add_component(event)
 
     f = open(filename, 'wb')
@@ -166,9 +92,13 @@ def generate_help_links(bookings_list: List[Booking], path: str) -> List[Booking
 
 def compile_calendar(name: str, email: str, cookie: str, logging: bool, calendar_files_directory: str):
     my_details = (name, email)
-    bookings_list = generate_booking_list(cookie, prices_file)
+    MyTutorParser.set_cookie(cookie)
+
+
+    bookings_list = generate_booking_list(prices_file)
     bookings_list = generate_help_links(bookings_list, exam_table_file)
-    bookings_list = generate_reports(bookings_list, cookie)
+    bookings_list = generate_reports(bookings_list)
+    MyTutorParser.get_price_data()
 
     calendar_basename = f"""{name.replace(" ", "_")}_{hashlib.sha256(cookie.encode('utf-8')).hexdigest()}.ics"""
     calendar_filename = os.path.join(calendar_files_directory, calendar_basename)
@@ -195,6 +125,6 @@ cookies_csv_file = os.path.join(script_dir, "cookies", "Cookies.csv")
 prices_file = os.path.join(script_dir, "src", "Price_Bands.csv")
 calendar_files_directory = settings["calendar_files_directory"].replace("\n", "")
 
-Cookies = Cookie_Reader(cookies_csv_file).get()
+Cookies = Cookie_Reader.get_cookies(cookies_csv_file)
 for c in Cookies:
     compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"], calendar_files_directory)
