@@ -35,6 +35,19 @@ class MyTutorParser:
                 confirmation = entry.find_all("td", {"class", "tile--large"})[2].find("p").getText().strip()
                 booking = Booking(name, lesson, timing, confirmation)
                 bookings_list.append(booking)
+
+        prices = MyTutorParser.get_price_data()
+        if not prices.keys() == ["default"]:
+            for booking in bookings_list:
+                if booking['student_name'] in prices.keys():
+                    price = prices[booking['student_name']]
+                else:
+                    price = prices["default"]
+                band_type = ["New", "Old"][int("old" in price)]
+                band = int(price[0])
+                booking.set_price_data(band_type,band)
+        else:
+            [booking.set_price_data("New", int(prices["default"][0])) for booking in bookings_list]
         return bookings_list
 
     @staticmethod
@@ -99,6 +112,7 @@ class MyTutorParser:
 
     @staticmethod
     def get_price_data():
+        prices_data = {}
         r = MyTutorParser.session.get("https://www.mytutor.co.uk/tutors/secure/price-band.html",
                                       cookies=MyTutorParser.cookies)
         soup = BeautifulSoup(r.text, "lxml")
@@ -111,3 +125,7 @@ class MyTutorParser:
                 parent = items[0].getText().strip()
                 student = items[1].getText().strip()
                 band = items[2].getText().replace("\n", "").strip().replace("\t", "")[5:]
+                prices_data.update({student: band})
+        prices_data.update({("default"): default_band})
+        return prices_data
+

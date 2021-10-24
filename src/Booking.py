@@ -26,6 +26,9 @@ class Booking:
                 break  # don't need to go through each level
         self.subject = str(self._lesson_name).replace(self.level, "").strip()
 
+    def set_price_data(self, band_type: str, band: int):
+        self._band_type, self._band = band_type, band
+
     def set_price(self, price):
         self._price = price
 
