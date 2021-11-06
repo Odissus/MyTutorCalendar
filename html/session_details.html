@@ -1,0 +1,264 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+<html lang="en">
+<head>
+    <title>MyTutor - Session Details</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&family=Montserrat&display=swap" rel="stylesheet">
+    <style>
+     
+        /*******************************/
+        /***** Layout & decoration *****/
+        /*******************************/
+        body {
+            background: #F9F8FB;
+            font-family: sans-serif;
+            margin: 0px;
+        }
+        header, section, aside {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            padding: 16px;
+            position: static;
+            left: 0px;
+            top: 0px;
+            background: #FFFFFF;
+            border: 1px solid #E7E6E9;
+            box-sizing: border-box;
+            box-shadow: 0px 0px 12px rgba(0, 0, 0, 0.07);
+        }
+        footer {
+            background: #EEEEEE;
+            box-shadow: inset 0px 1px 0px #CAC9D8;
+            padding: 17px;
+            margin-top: 20px;
+        }
+        header ul, aside ul {
+            list-style-type: none; /* Remove bullets */
+            padding: 0; 
+            margin: 0; 
+        }
+        header, .actionbar, .main_container {
+            margin: 20px;
+        }
+        .main_container::after {
+           content: "";
+           clear: both;
+           display: table;
+        }
+        section {
+           width: 70%;
+           float: left;
+           margin-top: 20px;
+        }
+        .aside_container {
+           width: 30%;
+           float: left;
+           
+           margin-top: 20px;
+        }
+        aside {
+           margin-left: 20px;
+        }
+         
+        /********************************/
+        /********** Typography **********/
+        /********************************/
+        
+        header h1, section h1, aside h1 {
+           font-family: 'Montserrat', sans-serif;
+           font-style: normal;
+           font-weight: normal;
+           font-size: 22px;
+           line-height: 27px;
+           color: #000000;
+           margin: 12px 0px;
+        }
+        header li {
+           font-family: Lato;
+           font-style: normal;
+           font-weight: 700;
+           font-size: 16px;
+           line-height: 22px;
+           color: #000000;
+        }
+        article p {
+           font-family: 'Lato';
+           font-style: normal;
+           font-weight: normal;
+           font-size: 14px;
+           line-height: 18px;
+           margin-top: 2px;
+           padding: 0px;
+        }
+        article h1 {
+           font-family: Montserrat;
+           font-style: normal;
+           font-weight: bold;
+           font-size: 16px;
+           line-height: 20px;
+           letter-spacing: 0.01em;
+           margin-bottom: 3px;
+           padding: 0px;
+        }
+        aside li a {
+           font-family: Montserrat;
+           font-style: normal;
+           font-weight: 700;
+           font-size: 14px;
+           line-height: 25px;
+           color: #5D5B78;
+           text-decoration: none;
+        }
+        aside li a:hover {
+         text-decoration: underline;
+         
+        }
+        footer {
+           font-family: 'Lato';
+           font-style: normal;
+           font-weight: normal;
+           font-size: 14px;
+           line-height: 18px;
+           color: #303336;
+           opacity: 0.8;
+        }
+        .btn {
+           font-family: 'Lato';
+           font-style: normal;
+           font-weight: bold;
+           font-size: 15px;
+           line-height: 17px;
+           text-transform: uppercase;
+           text-decoration: none;
+        }
+        
+        /*******************************/
+        /*********** Buttons ***********/
+        /*******************************/
+        
+        .btn {
+            display: inline-block;
+            text-align: center;
+            vertical-align: middle;
+            cursor: pointer;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            background-color: transparent;
+            border: 1px solid transparent;
+            padding: 12px 24px;
+            transition: color .15s ease-in-out,background-color .15s ease-in-out,border-color .15s ease-in-out,box-shadow .15s ease-in-out;
+        }
+        .btn-primary {
+            color: #fff;
+            background-color: #542EFF;
+            /*border-color: #0d6efd;*/
+        }
+        .btn-primary:hover {
+            background-color: #371EA8;
+        }
+        .btn-secondary, .btn-secondary.active {
+            color: #542EFF;
+            background-color:#F5F4F7;
+        }
+        .btn-secondary:hover {
+            background-color: #DCDAE0;
+        }
+        .btn-danger {
+            color: #F04640;
+            background-color: #F5F4F7;
+        }
+        .btn-danger:hover {
+            color: #fff;
+            background-color: #dc3545;
+        }
+    </style>
+</head>
+
+<body>
+    
+    <!---------- Header Content ---------->
+    <header>
+        <h1>
+            Session Details
+        </h1>
+        <ul>
+            <li>
+                #start_weekday# #start_date#&nbsp;&nbsp;#start_time#
+            </li>
+            <li>
+                #booking_type#
+            </li>
+            <li>
+                #student_name#
+            </li>
+            <li>
+                #lesson_name#
+            </li>
+        </ul>
+    </header>
+    
+    <!---------- Action Buttons ---------->
+    <div class="actionbar">
+        <button type="button" class="btn btn-danger">Delete</button>
+        <button type="button" class="btn btn-primary" style="float: right; margin-left: 10px;">Accept</button>
+        <button type="button" class="btn btn-secondary" style="float: right;">Reschedule</button>
+    </div>
+    
+    <!---------- Two columns layout ---------->
+    <div class="main_container">
+        
+        <!---------- Last Lesson Report Section ---------->
+        <section>
+            <h1>Last Lesson Report</h1>
+            <article>
+                <h1>📝 Today we covered</h1>
+                <p>#Progress#</p>
+            </article>
+            <article>
+                <h1>👏 I was impressed by</h1>
+                <p>#Good#</p>
+            </article>
+            <article>
+                <h1>🎯 We’ll keep working at</h1>
+                <p>#Improve#</p>
+            </article>
+            <article>
+                <h1>📋 Next time we’ll cover</h1>
+                <p>#Next#</p>
+            </article>
+        </section>
+        
+        <!-- Side Links -->
+        <div class="aside_container">
+            <aside>
+                <h1>Helpful Resources</h1>
+                <ul>
+                    <li><a href="aa">Syllabus</a></li>
+                    <li><a href="aa">Past papers</a></li>
+                    <li><a href="aa">Physics & Maths Tutor</a></li>
+                    <li><a href="aa">TES</a></li>
+                    <li><a href="aa">Site name</a></li>
+                </ul>
+            </aside>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <footer>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill-rule="evenodd" clip-rule="evenodd" d="M8 0C3.58 0 0 3.58 0 8C0 11.54 2.29 14.53 5.47 15.59C5.87 15.66 6.02 15.42 6.02 15.21C6.02 15.02 6.01 14.39 6.01 13.72C4 14.09 3.48 13.23 3.32 12.78C3.23 12.55 2.84 11.84 2.5 11.65C2.22 11.5 1.82 11.13 2.49 11.12C3.12 11.11 3.57 11.7 3.72 11.94C4.44 13.15 5.59 12.81 6.05 12.6C6.12 12.08 6.33 11.73 6.56 11.53C4.78 11.33 2.92 10.64 2.92 7.58C2.92 6.71 3.23 5.99 3.74 5.43C3.66 5.23 3.38 4.41 3.82 3.31C3.82 3.31 4.49 3.1 6.02 4.13C6.66 3.95 7.34 3.86 8.02 3.86C8.7 3.86 9.38 3.95 10.02 4.13C11.55 3.09 12.22 3.31 12.22 3.31C12.66 4.41 12.38 5.23 12.3 5.43C12.81 5.99 13.12 6.7 13.12 7.58C13.12 10.65 11.25 11.33 9.47 11.53C9.76 11.78 10.01 12.26 10.01 13.01C10.01 14.08 10 14.94 10 15.21C10 15.42 10.15 15.67 10.55 15.59C12.1381 15.0538 13.5181 14.0331 14.4958 12.6716C15.4734 11.31 15.9995 9.67619 16 8C16 3.58 12.42 0 8 0Z" fill="black" fill-opacity="0.6"/>
+        </svg>
+        Suggestions and contribution. <br>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+             <path d="M12.6667 1.33331H4C3.196 1.33331 2 1.86598 2 3.33331V12.6666C2 14.134 3.196 14.6666 4 14.6666H14V13.3333H4.008C3.7 13.3253 3.33333 13.204 3.33333 12.6666C3.33333 12.5993 3.33933 12.5393 3.34933 12.4846C3.424 12.1006 3.73867 12.0066 4.008 12H14V2.66665C14 2.31302 13.8595 1.97389 13.6095 1.72384C13.3594 1.47379 13.0203 1.33331 12.6667 1.33331ZM12.6667 7.33331L11.3333 6.66665L10 7.33331V2.66665H12.6667V7.33331Z" fill="black" fill-opacity="0.6"/>
+        </svg>
+        Need help? Read our documentation.
+    </footer>
+    
+ </body>
+</html>

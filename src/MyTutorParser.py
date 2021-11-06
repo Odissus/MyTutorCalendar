@@ -96,7 +96,7 @@ class MyTutorParser:
             report_html = message.find("div", {"class", "messagecard sent lessonreport"})
             if report_html is not None:  # It's a report
                 time = message.find("header").getText().split("\n\n\t\t\t")[1].replace("\n\t\t", "")
-                time_UTC = Booking.standardise_timing("DAY " + time, recurring=False, hour_correction=False)[0]
+                time_UTC = Booking.standardise_timing("DAY " + time, recurring=False)[0]
                 if latest_report is None:
                     latest_report = (report_html, time_UTC)
                 elif latest_report[1] < time_UTC:  # This is a later report (more recent)

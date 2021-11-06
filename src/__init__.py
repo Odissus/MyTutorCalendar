@@ -11,3 +11,4 @@ from Logger import Log as Logger
 from Exam_Boards_Translate_Table import TransitionTable as Exam_Boards_Translate_Table
 from Config_Manager import Config
 from MyTutorParser import MyTutorParser
+from Report_HTML_Generator import HTML_Report

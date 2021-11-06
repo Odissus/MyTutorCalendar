@@ -1,9 +1,5 @@
 #!/usr/bin/env python3
-import numpy as np
 from icalendar import Calendar, Event, vText, vCalAddress, Alarm
-import requests
-from bs4 import BeautifulSoup
-import re
 from src import *
 from typing import List, Tuple
 import hashlib
@@ -15,12 +11,13 @@ def generate_booking_list(prices_file_path: str) -> List[Booking]:
     Pricer.set_path(prices_file_path)
     for i, booking in enumerate(bookings_list):
         bookings_list[i] = Pricer.price(booking)
-
     return bookings_list
 
 
 def generate_reports(bookings: List[Booking]) -> List[Booking]:
     bookings = MyTutorParser.generate_reports(bookings)
+    for booking in bookings:
+        booking.last_report_HTML = HTML_Report.generate_report(booking)
     return bookings
 
 
@@ -57,6 +54,7 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
             event['uid'] = booking.ID
             event.add('priority', 5)
             event.add("DESCRIPTION", description)
+            #event.add("X - ALT -DESC", f'FMTTYPE = text / html:{booking.last_report_HTML}')
 
             organizer = vCalAddress(f'''MAILTO:{me[1]}''')
             organizer.params['cn'] = vText(f'''{me[0]}''')
@@ -121,10 +119,13 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 settings = Config.get(os.path.join(script_dir, "Config.txt"))
 
 exam_table_file = os.path.join(script_dir, "src", "Exam_Boards_Link_Table.csv")
+html_report_file = os.path.join(script_dir, "html", "session_details_outlook.html")
 cookies_csv_file = os.path.join(script_dir, "cookies", "Cookies.csv")
 prices_file = os.path.join(script_dir, "src", "Price_Bands.csv")
 calendar_files_directory = settings["calendar_files_directory"].replace("\n", "")
 
 Cookies = Cookie_Reader.get_cookies(cookies_csv_file)
+HTML_Report.initialise(html_report_file)
+
 for c in Cookies:
     compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"], calendar_files_directory)
