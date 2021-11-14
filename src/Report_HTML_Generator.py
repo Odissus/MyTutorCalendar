@@ -8,6 +8,7 @@ class HTML_Report:
     Key_words = ["student_name", "lesson_name", "start_date", "start_time", "start_weekday", "booking_type", "Progress",
                  "Good", "Improve", "Next"]
     Report = ""
+    loc = ""
 
     @staticmethod
     def initialise(report_loc: str):
@@ -20,6 +21,7 @@ class HTML_Report:
         with io.open(report_loc, "r", encoding="utf-8") as f:
             text = f.read()
             HTML_Report.Report = text
+        HTML_Report.loc = report_loc
 
     @staticmethod
     def generate_report(booking: Booking):

@@ -58,7 +58,7 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
             event.add('priority', 5)
             event.add("DESCRIPTION", description)
 
-            with io.open("html/session_details_outlook.html", mode="r", encoding="utf-8") as f:
+            with io.open(HTML_Report.loc, mode="r", encoding="utf-8") as f:
                 text = f.read()
             event.add("X - ALT -DESC", f'FMTTYPE=text/html:{text}')
 
