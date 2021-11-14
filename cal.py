@@ -3,6 +3,7 @@ from icalendar import Calendar, Event, vText, vCalAddress, Alarm
 from src import *
 from typing import List, Tuple
 import hashlib
+import io
 
 
 def generate_booking_list(prices_file_path: str) -> List[Booking]:
@@ -45,6 +46,8 @@ Price: {booking['price']}
 
 Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
 """
+
+            description=f"""Session Details\n \n \n{booking["start_weekday"]} {booking["start_date"]} {booking["start_time"]}\n \n \n{booking["booking_type"]}\n \n \n{booking["student_name"]}\n \n \n{booking["lesson_name"]}\n \n \nDELETE <https://odissus.com/> \nRESCHEDULE <https://odissus.com/> \nACCEPT<https://odissus.com/> \n \n \n \nLast Lesson Report\n \nHelpful Resources\n📝 Today we covered\n{booking["Progress"]}\n\n👏 I was impressed by\n\n{booking["Good"]}\n\n🎯 We’ll keep working at\n\n{booking["Improve"]}\n\n📋 Next time we’ll cover\n\n{booking["Next"]}\n \nSyllabus <https://odissus.com/> \nPast Papers <https://odissus.com/> \nPhysics & Maths Tutor <https://odissus.com/> \nTES <https://odissus.com/> \nSITE NAME <https://odissus.com/> \n \n \n \n \n \n \n \n \n \n \n"""
             booking_ids.append(booking.ID)
             event = Event()
             event.add('summary', f"MyTutor - {booking['lesson_name']} - {booking['student_name']}")
@@ -54,7 +57,10 @@ Start <https://www.mytutor.co.uk/tutors/secure/bookings.html>
             event['uid'] = booking.ID
             event.add('priority', 5)
             event.add("DESCRIPTION", description)
-            #event.add("X - ALT -DESC", f'FMTTYPE = text / html:{booking.last_report_HTML}')
+
+            with io.open("html/session_details_outlook.html", mode="r", encoding="utf-8") as f:
+                text = f.read()
+            event.add("X - ALT -DESC", f'FMTTYPE=text/html:{text}')
 
             organizer = vCalAddress(f'''MAILTO:{me[1]}''')
             organizer.params['cn'] = vText(f'''{me[0]}''')
@@ -88,7 +94,7 @@ def generate_help_links(bookings_list: List[Booking], path: str) -> List[Booking
     return bookings_list
 
 
-def compile_calendar(name: str, email: str, cookie: str, logging: bool, calendar_files_directory: str):
+def compile_calendar(name: str, email: str, cookie: str, logging: bool, link: str, calendar_files_directory: str):
     my_details = (name, email)
     MyTutorParser.set_cookie(cookie)
 
@@ -98,7 +104,7 @@ def compile_calendar(name: str, email: str, cookie: str, logging: bool, calendar
     bookings_list = generate_reports(bookings_list)
     MyTutorParser.get_price_data()
 
-    calendar_basename = f"""{name.replace(" ", "_")}_{hashlib.sha256(cookie.encode('utf-8')).hexdigest()}.ics"""
+    calendar_basename = f"""{name.replace(" ", "_")}_{hashlib.sha256(link.encode('utf-8')).hexdigest()}.ics"""
     calendar_filename = os.path.join(calendar_files_directory, calendar_basename)
     generate_calendar_file(bookings_list, filename=calendar_filename, me=my_details)
 
@@ -119,7 +125,7 @@ script_dir = os.path.dirname(os.path.realpath(__file__))
 settings = Config.get(os.path.join(script_dir, "Config.txt"))
 
 exam_table_file = os.path.join(script_dir, "src", "Exam_Boards_Link_Table.csv")
-html_report_file = os.path.join(script_dir, "html", "session_details.html")
+html_report_file = os.path.join(script_dir, "html", "session_details_outlook.html")
 cookies_csv_file = os.path.join(script_dir, "cookies", "Cookies.csv")
 prices_file = os.path.join(script_dir, "src", "Price_Bands.csv")
 calendar_files_directory = settings["calendar_files_directory"].replace("\n", "")
@@ -128,4 +134,4 @@ Cookies = Cookie_Reader.get_cookies(cookies_csv_file)
 HTML_Report.initialise(html_report_file)
 
 for c in Cookies:
-    compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"], calendar_files_directory)
+    compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"], c["Link"], calendar_files_directory)
