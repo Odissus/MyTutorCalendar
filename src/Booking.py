@@ -24,6 +24,7 @@ class Booking:
         self._start_weekday = calendar.day_name[self._booking_start_datetime.weekday()]
         self._start_time = str(self._booking_start_datetime.time())[:-3]  # no seconds
         self._booking_type = self.determine_booking_type()
+        self._alert = ""
 
         levels, self.level = ["A Level", "GCSE", "IB", "University"], "",
         for item in levels:

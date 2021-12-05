@@ -66,7 +66,12 @@ class MyTutorParser:
 
                 while name in chats[:, 0]:  # God help why did you have to do this to me...
                     name += "x"
-                chats = np.append(chats, [[name, link]], axis=0)
+                unread = details.find("p", {"class", "tile__time"}).find_all("span", {"class", "tile__unread"})
+                if len(unread) == 0:
+                    chats = np.append(chats, [[name, link]], axis=0)
+                else:
+                    pass
+                    # TODO implement alert system
         chats = chats[1:]
         for booking in bookings:
             booking.last_report = MyTutorParser._generate_lesson_report(booking, chats)
