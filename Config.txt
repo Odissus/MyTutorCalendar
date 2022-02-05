@@ -1,1 +1,0 @@
-calendar_files_directory: C:\Users\mateu\Downloads
