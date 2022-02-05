@@ -4,6 +4,7 @@ from src import *
 from typing import List, Tuple
 import hashlib
 import io
+import logging
 
 
 def generate_booking_list(prices_file_path: str) -> List[Booking]:
@@ -134,4 +135,8 @@ Cookies = Cookie_Reader.get_cookies(cookies_csv_file)
 HTML_Report.initialise(html_report_file)
 
 for c in Cookies:
-    compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"], c["Link"], calendar_files_directory)
+    try:
+        compile_calendar(c["Name"], c["Email"], c["Cookie"], c["Logging"], c["Link"], calendar_files_directory)
+    except Exception as e:
+        print(f"Error when processing {c['Name']}, contactable at {c['Email']}")
+        logging.error(e, exc_info=True)
